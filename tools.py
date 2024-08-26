@@ -15,7 +15,7 @@ from torch import nn
 from torch.nn import functional as F
 from torch import distributions as torchd
 from torch.utils.tensorboard import SummaryWriter
-
+import ipdb
 
 to_np = lambda x: x.detach().cpu().numpy()
 
@@ -146,13 +146,19 @@ def simulate(
         agent_state = None
         reward = [0] * len(envs)
     else:
+        # len(obs) == len(envs)
         step, episode, done, length, obs, agent_state, reward = state
     while (steps and step < steps) or (episodes and episode < episodes):
+        if step % 500 == 0 or (episode and episode % 50 == 0):
+            print(f"[tool.simulate] step:{step}, steps:{steps}, episode:{episode}, episodes:{episodes}.")
         # reset envs if necessary
         if done.any():
             indices = [index for index, d in enumerate(done) if d]
             results = [envs[i].reset() for i in indices]
-            results = [r() for r in results]
+            # results[0].keys(): ['orientations', 'height', 'velocity', 'image', 'is_terminal', 'is_first']
+            # results[0]["orientations"].shape: (14,); results[0]["velocity"].shape: (9,); results[0]["image"].shape: (64, 64, 3)
+            # results[0]["height"], list; 'is_terminal', 'is_first': bool
+            results = [r() for r in results] 
             for index, result in zip(indices, results):
                 t = result.copy()
                 t = {k: convert(v) for k, v in t.items()}
@@ -164,7 +170,8 @@ def simulate(
                 # replace obs with done by initial state
                 obs[index] = result
         # step agents
-        obs = {k: np.stack([o[k] for o in obs]) for k in obs[0] if "log_" not in k}
+        # 把不同环境的obs按照key stack起来: 从env维度的list转换为key的dict
+        obs = {k: np.stack([o[k] for o in obs]) for k in obs[0] if "log_" not in k} # k: ['orientations', 'height', 'velocity', 'image', 'is_terminal', 'is_first']
         action, agent_state = agent(obs, done, agent_state)
         if isinstance(action, dict):
             action = [
@@ -176,7 +183,9 @@ def simulate(
         assert len(action) == len(envs)
         # step envs
         results = [e.step(a) for e, a in zip(envs, action)]
-        results = [r() for r in results]
+        
+        # ipdb.set_trace()
+        results = [r() for r in results] #0: obs, 1: reward, 2: is_done, 3: discount; ??在哪确定的这个顺序？下面p[:3]取错了怎么办
         obs, reward, done = zip(*[p[:3] for p in results])
         obs = list(obs)
         reward = list(reward)
@@ -189,7 +198,7 @@ def simulate(
         for a, result, env in zip(action, results, envs):
             o, r, d, info = result
             o = {k: convert(v) for k, v in o.items()}
-            transition = o.copy()
+            transition = o.copy() # (state, action, reward, is_last/discount)
             if isinstance(a, dict):
                 transition.update(a)
             else:
@@ -205,7 +214,7 @@ def simulate(
                 save_episodes(directory, {envs[i].id: cache[envs[i].id]})
                 length = len(cache[envs[i].id]["reward"]) - 1
                 score = float(np.array(cache[envs[i].id]["reward"]).sum())
-                video = cache[envs[i].id]["image"]
+                video = cache[envs[i].id]["image"] # 当前trajectory上所有的image list
                 # record logs given from environments
                 for key in list(cache[envs[i].id].keys()):
                     if "log_" in key:
@@ -325,10 +334,10 @@ def sample_episodes(episodes, length, seed=0):
     while True:
         size = 0
         ret = None
-        p = np.array(
+        p = np.array( #获取每个episode中第一个元素（orientations？）的长度
             [len(next(iter(episode.values()))) for episode in episodes.values()]
         )
-        p = p / np.sum(p)
+        p = p / np.sum(p) # 按照episode长度归一化
         while size < length:
             episode = np_random.choice(list(episodes.values()), p=p)
             total = len(next(iter(episode.values())))
@@ -432,7 +441,7 @@ class OneHotDist(torchd.one_hot_categorical.OneHotCategorical):
         else:
             super().__init__(logits=logits, probs=probs)
 
-    def mode(self):
+    def mode(self): # Straight-through estimator
         _mode = F.one_hot(
             torch.argmax(super().logits, axis=-1), super().logits.shape[-1]
         )
@@ -794,6 +803,12 @@ def args_type(default):
 
 
 def static_scan(fn, inputs, start):
+    '''
+        fn: RSSM.obs_step(), return post, prior
+            post = {"stoch": stoch, "deter": prior["deter"], **stats}
+            prior = {"stoch": stoch, "deter": deter, **stats}
+        inputs: (action, embed, is_first)
+    '''
     last = start
     indices = range(inputs[0].shape[0])
     flag = True

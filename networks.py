@@ -118,23 +118,23 @@ class RSSM(nn.Module):
         if self._initial == "zeros":
             return state
         elif self._initial == "learned":
-            state["deter"] = torch.tanh(self.W).repeat(batch_size, 1)
-            state["stoch"] = self.get_stoch(state["deter"])
+            state["deter"] = torch.tanh(self.W).repeat(batch_size, 1) # (batch_size, self._deter)
+            state["stoch"] = self.get_stoch(state["deter"]) # (batch_size, self._stoch, self._discrete)
             return state
         else:
             raise NotImplementedError(self._initial)
 
     def observe(self, embed, action, is_first, state=None):
-        swap = lambda x: x.permute([1, 0] + list(range(2, len(x.shape))))
-        # (batch, time, ch) -> (time, batch, ch)
+        swap = lambda x: x.permute([1, 0] + list(range(2, len(x.shape)))) # 交换前两维，把batch和timestep交换
+        # (batch, time, ch) -> (time, batch, ch), time这里是batch_length，从0到batch_length-1
         embed, action, is_first = swap(embed), swap(action), swap(is_first)
         # prev_state[0] means selecting posterior of return(posterior, prior) from obs_step
-        post, prior = tools.static_scan(
+        post, prior = tools.static_scan( # static_scan(fn, inputs, start)
             lambda prev_state, prev_act, embed, is_first: self.obs_step(
                 prev_state[0], prev_act, embed, is_first
             ),
             (action, embed, is_first),
-            (state, state),
+            (state, state), # (None, None)
         )
 
         # (batch, time, stoch, discrete_num) -> (batch, time, stoch, discrete_num)
@@ -160,7 +160,7 @@ class RSSM(nn.Module):
 
     def get_dist(self, state, dtype=None):
         if self._discrete:
-            logit = state["logit"]
+            logit = state["logit"] # (batch_size, self._stoch, self._discrete)
             dist = torchd.independent.Independent(
                 tools.OneHotDist(logit, unimix_ratio=self._unimix_ratio), 1
             )
@@ -206,7 +206,7 @@ class RSSM(nn.Module):
         return post, prior
 
     def img_step(self, prev_state, prev_action, sample=True):
-        # (batch, stoch, discrete_num)
+        # (batch, stoch, discrete_num) # {logit, stoch, deter} # prev_action: (batch_size, num_actions)
         prev_stoch = prev_state["stoch"]
         if self._discrete:
             shape = list(prev_stoch.shape[:-2]) + [self._stoch * self._discrete]
@@ -234,12 +234,12 @@ class RSSM(nn.Module):
 
     def get_stoch(self, deter):
         x = self._img_out_layers(deter)
-        stats = self._suff_stats_layer("ims", x)
+        stats = self._suff_stats_layer("ims", x) # {"logit": logit} for discrete
         dist = self.get_dist(stats)
-        return dist.mode()
+        return dist.mode() # Straight-through estimator
 
     def _suff_stats_layer(self, name, x):
-        if self._discrete:
+        if self._discrete: # 32
             if name == "ims":
                 x = self._imgs_stat_layer(x)
             elif name == "obs":
@@ -347,9 +347,9 @@ class MultiEncoder(nn.Module):
 
     def forward(self, obs):
         outputs = []
-        if self.cnn_shapes:
-            inputs = torch.cat([obs[k] for k in self.cnn_shapes], -1)
-            outputs.append(self._cnn(inputs))
+        if self.cnn_shapes: # {'image': (64, 64, 3)}
+            inputs = torch.cat([obs[k] for k in self.cnn_shapes], -1) # torch.Size([16, 64, 64, 64, 3])
+            outputs.append(self._cnn(inputs)) # (batch_size, batch_length, 
         if self.mlp_shapes:
             inputs = torch.cat([obs[k] for k in self.mlp_shapes], -1)
             outputs.append(self._mlp(inputs))
@@ -453,12 +453,12 @@ class ConvEncoder(nn.Module):
         act="SiLU",
         norm=True,
         kernel_size=4,
-        minres=4,
+        minres=4, # minium resolution?
     ):
         super(ConvEncoder, self).__init__()
         act = getattr(torch.nn, act)
         h, w, input_ch = input_shape
-        stages = int(np.log2(h) - np.log2(minres))
+        stages = int(np.log2(h) - np.log2(minres)) # 4 = log2(64) - log2(4)
         in_dim = input_ch
         out_dim = depth
         layers = []
@@ -478,8 +478,8 @@ class ConvEncoder(nn.Module):
             in_dim = out_dim
             out_dim *= 2
             h, w = h // 2, w // 2
-
-        self.outdim = out_dim // 2 * h * w
+        
+        self.outdim = out_dim // 2 * h * w # 4096, out_dim = 512, h=4, w=4
         self.layers = nn.Sequential(*layers)
         self.layers.apply(tools.weight_init)
 

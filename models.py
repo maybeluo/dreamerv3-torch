@@ -109,13 +109,13 @@ class WorldModel(nn.Module):
         # action (batch_size, batch_length, act_dim)
         # image (batch_size, batch_length, h, w, ch)
         # reward (batch_size, batch_length)
-        # discount (batch_size, batch_length)
-        data = self.preprocess(data)
+        # discount:(batch_size, batch_length), is_first: (batch_size, batch_length)
+        data = self.preprocess(data) # data中元素从array/list转成tensor；图像归一化
 
         with tools.RequiresGrad(self):
             with torch.cuda.amp.autocast(self._use_amp):
-                embed = self.encoder(data)
-                post, prior = self.dynamics.observe(
+                embed = self.encoder(data) # [16, 64, 4096], encode image to embedding for each timestep
+                post, prior = self.dynamics.observe( # RSSM.observe
                     embed, data["action"], data["is_first"]
                 )
                 kl_free = self._config.kl_free
@@ -126,15 +126,15 @@ class WorldModel(nn.Module):
                 )
                 assert kl_loss.shape == embed.shape[:2], kl_loss.shape
                 preds = {}
-                for name, head in self.heads.items():
+                for name, head in self.heads.items(): # name: ["decoder", "reward", "cont"]
                     grad_head = name in self._config.grad_heads
-                    feat = self.dynamics.get_feat(post)
+                    feat = self.dynamics.get_feat(post) # decoder: torch.Size([16, 64, 1536]); reward, cont: torch.Size([16, 64, 1536]); 
                     feat = feat if grad_head else feat.detach()
                     pred = head(feat)
                     if type(pred) is dict:
                         preds.update(pred)
                     else:
-                        preds[name] = pred
+                        preds[name] = pred # 'Independent' object; reward: tools.DiscDist; cont:tools.Bernoulli;
                 losses = {}
                 for name, pred in preds.items():
                     loss = -pred.log_prob(data[name])
@@ -183,7 +183,7 @@ class WorldModel(nn.Module):
         # 'is_terminal' is necesarry to train cont_head
         assert "is_terminal" in obs
         obs["cont"] = torch.Tensor(1.0 - obs["is_terminal"]).unsqueeze(-1)
-        obs = {k: torch.Tensor(v).to(self._config.device) for k, v in obs.items()}
+        obs = {k: torch.Tensor(v).to(self._config.device) for k, v in obs.items()} # obs.keys: ['orientations', 'height', 'velocity', 'image', 'is_terminal', 'is_first', 'reward', 'discount', 'action', 'logprob', 'cont']
         return obs
 
     def video_pred(self, data):

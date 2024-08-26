@@ -1,0 +1,380 @@
+Dreamer(
+  (_wm): OptimizedModule(
+    (_orig_mod): WorldModel(
+      (encoder): MultiEncoder(
+        (_cnn): ConvEncoder(
+          (layers): Sequential(
+            (0): Conv2dSamePad(3, 32, kernel_size=(4, 4), stride=(2, 2), bias=False)
+            (1): ImgChLayerNorm(
+              (norm): LayerNorm((32,), eps=0.001, elementwise_affine=True)
+            )
+            (2): SiLU()
+            (3): Conv2dSamePad(32, 64, kernel_size=(4, 4), stride=(2, 2), bias=False)
+            (4): ImgChLayerNorm(
+              (norm): LayerNorm((64,), eps=0.001, elementwise_affine=True)
+            )
+            (5): SiLU()
+            (6): Conv2dSamePad(64, 128, kernel_size=(4, 4), stride=(2, 2), bias=False)
+            (7): ImgChLayerNorm(
+              (norm): LayerNorm((128,), eps=0.001, elementwise_affine=True)
+            )
+            (8): SiLU()
+            (9): Conv2dSamePad(128, 256, kernel_size=(4, 4), stride=(2, 2), bias=False)
+            (10): ImgChLayerNorm(
+              (norm): LayerNorm((256,), eps=0.001, elementwise_affine=True)
+            )
+            (11): SiLU()
+          )
+        )
+      )
+      (dynamics): RSSM(
+        (_img_in_layers): Sequential(
+          (0): Linear(in_features=1030, out_features=512, bias=False)
+          (1): LayerNorm((512,), eps=0.001, elementwise_affine=True)
+          (2): SiLU()
+        )
+        (_cell): GRUCell(
+          (layers): Sequential(
+            (GRU_linear): Linear(in_features=1024, out_features=1536, bias=False)
+            (GRU_norm): LayerNorm((1536,), eps=0.001, elementwise_affine=True)
+          )
+        )
+        (_img_out_layers): Sequential(
+          (0): Linear(in_features=512, out_features=512, bias=False)
+          (1): LayerNorm((512,), eps=0.001, elementwise_affine=True)
+          (2): SiLU()
+        )
+        (_obs_out_layers): Sequential(
+          (0): Linear(in_features=4608, out_features=512, bias=False)
+          (1): LayerNorm((512,), eps=0.001, elementwise_affine=True)
+          (2): SiLU()
+        )
+        (_imgs_stat_layer): Linear(in_features=512, out_features=1024, bias=True)
+        (_obs_stat_layer): Linear(in_features=512, out_features=1024, bias=True)
+      )
+      (heads): ModuleDict(
+        (decoder): MultiDecoder(
+          (_cnn): ConvDecoder(
+            (_linear_layer): Linear(in_features=1536, out_features=4096, bias=True)
+            (layers): Sequential(
+              (0): ConvTranspose2d(256, 128, kernel_size=(4, 4), stride=(2, 2), padding=(1, 1), bias=False)
+              (1): ImgChLayerNorm(
+                (norm): LayerNorm((128,), eps=0.001, elementwise_affine=True)
+              )
+              (2): SiLU()
+              (3): ConvTranspose2d(128, 64, kernel_size=(4, 4), stride=(2, 2), padding=(1, 1), bias=False)
+              (4): ImgChLayerNorm(
+                (norm): LayerNorm((64,), eps=0.001, elementwise_affine=True)
+              )
+              (5): SiLU()
+              (6): ConvTranspose2d(64, 32, kernel_size=(4, 4), stride=(2, 2), padding=(1, 1), bias=False)
+              (7): ImgChLayerNorm(
+                (norm): LayerNorm((32,), eps=0.001, elementwise_affine=True)
+              )
+              (8): SiLU()
+              (9): ConvTranspose2d(32, 3, kernel_size=(4, 4), stride=(2, 2), padding=(1, 1))
+            )
+          )
+        )
+        (reward): MLP(
+          (layers): Sequential(
+            (Reward_linear0): Linear(in_features=1536, out_features=512, bias=False)
+            (Reward_norm0): LayerNorm((512,), eps=0.001, elementwise_affine=True)
+            (Reward_act0): SiLU()
+            (Reward_linear1): Linear(in_features=512, out_features=512, bias=False)
+            (Reward_norm1): LayerNorm((512,), eps=0.001, elementwise_affine=True)
+            (Reward_act1): SiLU()
+          )
+          (mean_layer): Linear(in_features=512, out_features=255, bias=True)
+        )
+        (cont): MLP(
+          (layers): Sequential(
+            (Cont_linear0): Linear(in_features=1536, out_features=512, bias=False)
+            (Cont_norm0): LayerNorm((512,), eps=0.001, elementwise_affine=True)
+            (Cont_act0): SiLU()
+            (Cont_linear1): Linear(in_features=512, out_features=512, bias=False)
+            (Cont_norm1): LayerNorm((512,), eps=0.001, elementwise_affine=True)
+            (Cont_act1): SiLU()
+          )
+          (mean_layer): Linear(in_features=512, out_features=1, bias=True)
+        )
+      )
+    )
+  )
+  (_task_behavior): OptimizedModule(
+    (_orig_mod): ImagBehavior(
+      (_world_model): WorldModel(
+        (encoder): MultiEncoder(
+          (_cnn): ConvEncoder(
+            (layers): Sequential(
+              (0): Conv2dSamePad(3, 32, kernel_size=(4, 4), stride=(2, 2), bias=False)
+              (1): ImgChLayerNorm(
+                (norm): LayerNorm((32,), eps=0.001, elementwise_affine=True)
+              )
+              (2): SiLU()
+              (3): Conv2dSamePad(32, 64, kernel_size=(4, 4), stride=(2, 2), bias=False)
+              (4): ImgChLayerNorm(
+                (norm): LayerNorm((64,), eps=0.001, elementwise_affine=True)
+              )
+              (5): SiLU()
+              (6): Conv2dSamePad(64, 128, kernel_size=(4, 4), stride=(2, 2), bias=False)
+              (7): ImgChLayerNorm(
+                (norm): LayerNorm((128,), eps=0.001, elementwise_affine=True)
+              )
+              (8): SiLU()
+              (9): Conv2dSamePad(128, 256, kernel_size=(4, 4), stride=(2, 2), bias=False)
+              (10): ImgChLayerNorm(
+                (norm): LayerNorm((256,), eps=0.001, elementwise_affine=True)
+              )
+              (11): SiLU()
+            )
+          )
+        )
+        (dynamics): RSSM(
+          (_img_in_layers): Sequential(
+            (0): Linear(in_features=1030, out_features=512, bias=False)
+            (1): LayerNorm((512,), eps=0.001, elementwise_affine=True)
+            (2): SiLU()
+          )
+          (_cell): GRUCell(
+            (layers): Sequential(
+              (GRU_linear): Linear(in_features=1024, out_features=1536, bias=False)
+              (GRU_norm): LayerNorm((1536,), eps=0.001, elementwise_affine=True)
+            )
+          )
+          (_img_out_layers): Sequential(
+            (0): Linear(in_features=512, out_features=512, bias=False)
+            (1): LayerNorm((512,), eps=0.001, elementwise_affine=True)
+            (2): SiLU()
+          )
+          (_obs_out_layers): Sequential(
+            (0): Linear(in_features=4608, out_features=512, bias=False)
+            (1): LayerNorm((512,), eps=0.001, elementwise_affine=True)
+            (2): SiLU()
+          )
+          (_imgs_stat_layer): Linear(in_features=512, out_features=1024, bias=True)
+          (_obs_stat_layer): Linear(in_features=512, out_features=1024, bias=True)
+        )
+        (heads): ModuleDict(
+          (decoder): MultiDecoder(
+            (_cnn): ConvDecoder(
+              (_linear_layer): Linear(in_features=1536, out_features=4096, bias=True)
+              (layers): Sequential(
+                (0): ConvTranspose2d(256, 128, kernel_size=(4, 4), stride=(2, 2), padding=(1, 1), bias=False)
+                (1): ImgChLayerNorm(
+                  (norm): LayerNorm((128,), eps=0.001, elementwise_affine=True)
+                )
+                (2): SiLU()
+                (3): ConvTranspose2d(128, 64, kernel_size=(4, 4), stride=(2, 2), padding=(1, 1), bias=False)
+                (4): ImgChLayerNorm(
+                  (norm): LayerNorm((64,), eps=0.001, elementwise_affine=True)
+                )
+                (5): SiLU()
+                (6): ConvTranspose2d(64, 32, kernel_size=(4, 4), stride=(2, 2), padding=(1, 1), bias=False)
+                (7): ImgChLayerNorm(
+                  (norm): LayerNorm((32,), eps=0.001, elementwise_affine=True)
+                )
+                (8): SiLU()
+                (9): ConvTranspose2d(32, 3, kernel_size=(4, 4), stride=(2, 2), padding=(1, 1))
+              )
+            )
+          )
+          (reward): MLP(
+            (layers): Sequential(
+              (Reward_linear0): Linear(in_features=1536, out_features=512, bias=False)
+              (Reward_norm0): LayerNorm((512,), eps=0.001, elementwise_affine=True)
+              (Reward_act0): SiLU()
+              (Reward_linear1): Linear(in_features=512, out_features=512, bias=False)
+              (Reward_norm1): LayerNorm((512,), eps=0.001, elementwise_affine=True)
+              (Reward_act1): SiLU()
+            )
+            (mean_layer): Linear(in_features=512, out_features=255, bias=True)
+          )
+          (cont): MLP(
+            (layers): Sequential(
+              (Cont_linear0): Linear(in_features=1536, out_features=512, bias=False)
+              (Cont_norm0): LayerNorm((512,), eps=0.001, elementwise_affine=True)
+              (Cont_act0): SiLU()
+              (Cont_linear1): Linear(in_features=512, out_features=512, bias=False)
+              (Cont_norm1): LayerNorm((512,), eps=0.001, elementwise_affine=True)
+              (Cont_act1): SiLU()
+            )
+            (mean_layer): Linear(in_features=512, out_features=1, bias=True)
+          )
+        )
+      )
+      (actor): MLP(
+        (layers): Sequential(
+          (Actor_linear0): Linear(in_features=1536, out_features=512, bias=False)
+          (Actor_norm0): LayerNorm((512,), eps=0.001, elementwise_affine=True)
+          (Actor_act0): SiLU()
+          (Actor_linear1): Linear(in_features=512, out_features=512, bias=False)
+          (Actor_norm1): LayerNorm((512,), eps=0.001, elementwise_affine=True)
+          (Actor_act1): SiLU()
+        )
+        (mean_layer): Linear(in_features=512, out_features=6, bias=True)
+        (std_layer): Linear(in_features=512, out_features=6, bias=True)
+      )
+      (value): MLP(
+        (layers): Sequential(
+          (Value_linear0): Linear(in_features=1536, out_features=512, bias=False)
+          (Value_norm0): LayerNorm((512,), eps=0.001, elementwise_affine=True)
+          (Value_act0): SiLU()
+          (Value_linear1): Linear(in_features=512, out_features=512, bias=False)
+          (Value_norm1): LayerNorm((512,), eps=0.001, elementwise_affine=True)
+          (Value_act1): SiLU()
+        )
+        (mean_layer): Linear(in_features=512, out_features=255, bias=True)
+      )
+      (_slow_value): MLP(
+        (layers): Sequential(
+          (Value_linear0): Linear(in_features=1536, out_features=512, bias=False)
+          (Value_norm0): LayerNorm((512,), eps=0.001, elementwise_affine=True)
+          (Value_act0): SiLU()
+          (Value_linear1): Linear(in_features=512, out_features=512, bias=False)
+          (Value_norm1): LayerNorm((512,), eps=0.001, elementwise_affine=True)
+          (Value_act1): SiLU()
+        )
+        (mean_layer): Linear(in_features=512, out_features=255, bias=True)
+      )
+    )
+  )
+  (_expl_behavior): OptimizedModule(
+    (_orig_mod): ImagBehavior(
+      (_world_model): WorldModel(
+        (encoder): MultiEncoder(
+          (_cnn): ConvEncoder(
+            (layers): Sequential(
+              (0): Conv2dSamePad(3, 32, kernel_size=(4, 4), stride=(2, 2), bias=False)
+              (1): ImgChLayerNorm(
+                (norm): LayerNorm((32,), eps=0.001, elementwise_affine=True)
+              )
+              (2): SiLU()
+              (3): Conv2dSamePad(32, 64, kernel_size=(4, 4), stride=(2, 2), bias=False)
+              (4): ImgChLayerNorm(
+                (norm): LayerNorm((64,), eps=0.001, elementwise_affine=True)
+              )
+              (5): SiLU()
+              (6): Conv2dSamePad(64, 128, kernel_size=(4, 4), stride=(2, 2), bias=False)
+              (7): ImgChLayerNorm(
+                (norm): LayerNorm((128,), eps=0.001, elementwise_affine=True)
+              )
+              (8): SiLU()
+              (9): Conv2dSamePad(128, 256, kernel_size=(4, 4), stride=(2, 2), bias=False)
+              (10): ImgChLayerNorm(
+                (norm): LayerNorm((256,), eps=0.001, elementwise_affine=True)
+              )
+              (11): SiLU()
+            )
+          )
+        )
+        (dynamics): RSSM(
+          (_img_in_layers): Sequential(
+            (0): Linear(in_features=1030, out_features=512, bias=False)
+            (1): LayerNorm((512,), eps=0.001, elementwise_affine=True)
+            (2): SiLU()
+          )
+          (_cell): GRUCell(
+            (layers): Sequential(
+              (GRU_linear): Linear(in_features=1024, out_features=1536, bias=False)
+              (GRU_norm): LayerNorm((1536,), eps=0.001, elementwise_affine=True)
+            )
+          )
+          (_img_out_layers): Sequential(
+            (0): Linear(in_features=512, out_features=512, bias=False)
+            (1): LayerNorm((512,), eps=0.001, elementwise_affine=True)
+            (2): SiLU()
+          )
+          (_obs_out_layers): Sequential(
+            (0): Linear(in_features=4608, out_features=512, bias=False)
+            (1): LayerNorm((512,), eps=0.001, elementwise_affine=True)
+            (2): SiLU()
+          )
+          (_imgs_stat_layer): Linear(in_features=512, out_features=1024, bias=True)
+          (_obs_stat_layer): Linear(in_features=512, out_features=1024, bias=True)
+        )
+        (heads): ModuleDict(
+          (decoder): MultiDecoder(
+            (_cnn): ConvDecoder(
+              (_linear_layer): Linear(in_features=1536, out_features=4096, bias=True)
+              (layers): Sequential(
+                (0): ConvTranspose2d(256, 128, kernel_size=(4, 4), stride=(2, 2), padding=(1, 1), bias=False)
+                (1): ImgChLayerNorm(
+                  (norm): LayerNorm((128,), eps=0.001, elementwise_affine=True)
+                )
+                (2): SiLU()
+                (3): ConvTranspose2d(128, 64, kernel_size=(4, 4), stride=(2, 2), padding=(1, 1), bias=False)
+                (4): ImgChLayerNorm(
+                  (norm): LayerNorm((64,), eps=0.001, elementwise_affine=True)
+                )
+                (5): SiLU()
+                (6): ConvTranspose2d(64, 32, kernel_size=(4, 4), stride=(2, 2), padding=(1, 1), bias=False)
+                (7): ImgChLayerNorm(
+                  (norm): LayerNorm((32,), eps=0.001, elementwise_affine=True)
+                )
+                (8): SiLU()
+                (9): ConvTranspose2d(32, 3, kernel_size=(4, 4), stride=(2, 2), padding=(1, 1))
+              )
+            )
+          )
+          (reward): MLP(
+            (layers): Sequential(
+              (Reward_linear0): Linear(in_features=1536, out_features=512, bias=False)
+              (Reward_norm0): LayerNorm((512,), eps=0.001, elementwise_affine=True)
+              (Reward_act0): SiLU()
+              (Reward_linear1): Linear(in_features=512, out_features=512, bias=False)
+              (Reward_norm1): LayerNorm((512,), eps=0.001, elementwise_affine=True)
+              (Reward_act1): SiLU()
+            )
+            (mean_layer): Linear(in_features=512, out_features=255, bias=True)
+          )
+          (cont): MLP(
+            (layers): Sequential(
+              (Cont_linear0): Linear(in_features=1536, out_features=512, bias=False)
+              (Cont_norm0): LayerNorm((512,), eps=0.001, elementwise_affine=True)
+              (Cont_act0): SiLU()
+              (Cont_linear1): Linear(in_features=512, out_features=512, bias=False)
+              (Cont_norm1): LayerNorm((512,), eps=0.001, elementwise_affine=True)
+              (Cont_act1): SiLU()
+            )
+            (mean_layer): Linear(in_features=512, out_features=1, bias=True)
+          )
+        )
+      )
+      (actor): MLP(
+        (layers): Sequential(
+          (Actor_linear0): Linear(in_features=1536, out_features=512, bias=False)
+          (Actor_norm0): LayerNorm((512,), eps=0.001, elementwise_affine=True)
+          (Actor_act0): SiLU()
+          (Actor_linear1): Linear(in_features=512, out_features=512, bias=False)
+          (Actor_norm1): LayerNorm((512,), eps=0.001, elementwise_affine=True)
+          (Actor_act1): SiLU()
+        )
+        (mean_layer): Linear(in_features=512, out_features=6, bias=True)
+        (std_layer): Linear(in_features=512, out_features=6, bias=True)
+      )
+      (value): MLP(
+        (layers): Sequential(
+          (Value_linear0): Linear(in_features=1536, out_features=512, bias=False)
+          (Value_norm0): LayerNorm((512,), eps=0.001, elementwise_affine=True)
+          (Value_act0): SiLU()
+          (Value_linear1): Linear(in_features=512, out_features=512, bias=False)
+          (Value_norm1): LayerNorm((512,), eps=0.001, elementwise_affine=True)
+          (Value_act1): SiLU()
+        )
+        (mean_layer): Linear(in_features=512, out_features=255, bias=True)
+      )
+      (_slow_value): MLP(
+        (layers): Sequential(
+          (Value_linear0): Linear(in_features=1536, out_features=512, bias=False)
+          (Value_norm0): LayerNorm((512,), eps=0.001, elementwise_affine=True)
+          (Value_act0): SiLU()
+          (Value_linear1): Linear(in_features=512, out_features=512, bias=False)
+          (Value_norm1): LayerNorm((512,), eps=0.001, elementwise_affine=True)
+          (Value_act1): SiLU()
+        )
+        (mean_layer): Linear(in_features=512, out_features=255, bias=True)
+      )
+    )
+  )
+)

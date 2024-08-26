@@ -3,6 +3,7 @@ import functools
 import os
 import pathlib
 import sys
+import ipdb
 
 os.environ["MUJOCO_GL"] = "osmesa"
 
@@ -59,9 +60,9 @@ class Dreamer(nn.Module):
         step = self._step
         if training:
             steps = (
-                self._config.pretrain
-                if self._should_pretrain()
-                else self._should_train(step)
+                self._config.pretrain # 100
+                if self._should_pretrain() # tools.Once()
+                else self._should_train(step) # tools.Every(config.batch_size * config.batch_length / config.train_ratio), 16*64/512
             )
             for _ in range(steps):
                 self._train(next(self._dataset))
@@ -115,6 +116,11 @@ class Dreamer(nn.Module):
         return policy_output, state
 
     def _train(self, data):
+        # data: dict, 每个元素对应batch_size * batch_length，如
+        #       action (batch_size, batch_length, act_dim)
+        #       image (batch_size, batch_length, h, w, ch)
+        #       reward (batch_size, batch_length)
+        #       discount (batch_size, batch_length)
         metrics = {}
         post, context, mets = self._wm._train(data)
         metrics.update(mets)
@@ -204,6 +210,7 @@ def make_env(config, mode, id):
 
 
 def main(config):
+    print(config)
     tools.set_seed_everywhere(config.seed)
     if config.deterministic_run:
         tools.enable_deterministic_run()
@@ -228,6 +235,7 @@ def main(config):
         directory = config.offline_traindir.format(**vars(config))
     else:
         directory = config.traindir
+    
     train_eps = tools.load_episodes(directory, limit=config.dataset_size)
     if config.offline_evaldir:
         directory = config.offline_evaldir.format(**vars(config))
@@ -267,6 +275,7 @@ def main(config):
         def random_agent(o, d, s):
             action = random_actor.sample()
             logprob = random_actor.log_prob(action)
+            # action.shape:torch.Size([4, 6]) logprob.shape:torch.Size([4])
             return {"action": action, "logprob": logprob}, None
 
         state = tools.simulate(
